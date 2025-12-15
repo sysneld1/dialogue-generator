@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- Установка кодировки страницы -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Настройка viewport для мобильной адаптивности -->
+    <title>Спор между двумя агентами ИИ</title>
+    <!-- Заголовок страницы -->
+
+    <!-- Подключение шрифта Roboto от Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Встроенные стили CSS для оформления страницы -->
+    <style>
+        /* Основные стили для body */
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* Стили для заголовка h1 */
+        h1 {
+            text-align: center;
+            color: #fff;
+            margin-bottom: 30px;
+            font-size: 2rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        /* Стили для индикатора GPU */
+        #gpu-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        #lamp {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 10px;
+            background-color: gray;
+        }
+        #gpu-message {
+            font-size: 16px;
+            color: #333;
+        }
+
+        /* Стили для формы диалога */
+        #dialog-form {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            transition: transform 0.3s ease;
+        }
+        #dialog-form:hover {
+            transform: translateY(-5px);
+        }
+
+        /* Стили для меток и полей ввода */
+        label {
+            font-weight: 500;
+            color: #444;
+        }
+
+        input[type="text"], input[type="number"], textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+            transition: border-color 0.3s ease;
+        }
+        input[type="text"]:focus, input[type="number"]:focus, textarea:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+
+        /* Специальные стили для textarea */
+        textarea {
+            height: 200px;  /* Фиксированная высота для описаний */
+            resize: vertical;  /* Разрешен только вертикальный resize */
+            overflow-y: auto;  /* Скроллинг по вертикали */
+            word-wrap: break-word;  /* Перенос слов */
+        }
+
+        /* Специальные стили для поля темы */
+        #topic {
+            height: 100px;  /* Начальная меньшая высота */
+            resize: vertical;  /* Разрешает вертикальное изменение размера */
+            overflow-y: auto;  /* Скроллинг внутри, если текст переполняет */
+        }
+
+        /* Стили для контейнера кнопок */
+        .button-container {
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            border: none;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+        }
+        button:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Стили для контейнера диалога */
+        .dialog-container {
+            height: 500px;
+            overflow-y: auto;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid #667eea;
+            border-radius: 15px;
+            font-size: 16px;
+            margin: 20px 0;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 600px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Стили для строки диалога */
+        .dialog-line {
+            margin-bottom: 15px;
+            padding: 15px;
+            background: rgba(248, 249, 250, 0.8);
+            border-radius: 10px;
+            border-left: 5px solid #667eea;
+            color: #000 !important;
+            word-wrap: break-word;
+        }
+
+        /* Стили для строки ожидания */
+        .dialog-line-waiting {
+            margin-bottom: 15px;
+            padding: 15px;
+            background: rgba(240, 240, 240, 0.8);
+            border-radius: 10px;
+            border-left: 5px solid #ff9800;
+            color: #666 !important;
+            font-style: italic;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Стили для спиннера (SVG) */
+        .spinner-svg {
+            width: 40px;
+            height: 40px;
+            flex-shrink: 0;
+            margin-left: 10px;
+        }
+        .path {
+            fill: none;
+            stroke: #ff9800;
+            stroke-width: 4;
+            stroke-linecap: round;
+            stroke-dasharray: 62.8 62.8; /* Половина окружности (для r=20: ~126 полна) для эффекта вращающейся полукруги */
+            animation: spin 1s linear infinite;
+            transform-origin: 25px 25px;
+            will-change: transform;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .counter {
+            fill: #333; /* Цвет текста счетчика */
+            font-size: 12px;
+            font-weight: bold;
+            text-anchor: middle;
+        }
+
+        /* Стили для прогресс-бара */
+        .progress {
+            width: 100%;
+            max-width: 600px;
+            background: rgba(240, 240, 240, 0.8);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-bar {
+            height: 10px;
+            width: 0%;
+            border-radius: 10px;
+            transition: width 0.5s ease, background 0.5s ease;
+            background: linear-gradient(135deg, #ff5722 0%, #e91e63 100%); /* Начальный цвет (красноватый) */
+            background-image: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 10px,
+                rgba(255, 255, 255, 0.3) 10px,
+                rgba(255, 255, 255, 0.3) 20px
+            );
+            background-size: 20px 20px;
+            animation:
+                progress-stripes 1s linear infinite,  /* Движение полос */
+                pulse 0.5s ease-in-out infinite;     /* Пульсация (новое) */
+        }
+        @keyframes progress-stripes {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 0%; }
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }  /* Легкое увеличение для эффекта пульсации */
+        }
+
+        /* Стили для сообщения завершения */
+        #success-message {
+            display: none;
+            color: #28a745;
+            font-weight: bold;
+            text-align: center;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            margin: 10px 0;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        /* Стили для сообщения остановки */
+        #stop-message {
+            display: none;
+            color: #dc3545;
+            font-weight: bold;
+            text-align: center;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            margin: 10px 0;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        /* Стили для сообщения ошибки */
+        #error-message {
+            display: none;
+            color: #ff5722; /* Оранжевый цвет для ошибки */
+            font-weight: bold;
+            text-align: center;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            margin: 10px 0;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        /* Стили для инструкции (список) */
+        ol {
+            color: #fff;
+            padding-left: 20px;
+            width: 100%;
+            max-width: 600px;
+        }
+        ol li {
+            margin-bottom: 5px;
+        }
+
+        /* Темная тема для предпочитающих темный режим */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+                color: #ecf0f1;
+            }
+            #dialog-form, .dialog-container, #success-message, #stop-message, #gpu-indicator, #error-message {
+                background: rgba(28, 28, 28, 0.9);
+                color: #ecf0f1;
+            }
+            .dialog-line {
+                background: rgba(45, 45, 45, 0.8);
+                color: #ecf0f1 !important;
+            }
+            .dialog-line-waiting {
+                background: rgba(58, 58, 58, 0.8);
+                color: #ccc !important;
+            }
+            label, ol, #gpu-message, #error-message {
+                color: #ecf0f1;
+            }
+            .counter {
+                fill: #ecf0f1; /* Цвет текста в темной теме */
+            }
+        }
+
+        /* Мобильная адаптация */
+        @media (max-width: 768px) {
+            #dialog-form, .dialog-container, .progress, #success-message, #stop-message, #gpu-indicator, #error-message {
+                max-width: 95%;
+                padding: 20px;
+            }
+            h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+
+    <!-- Подключение библиотеки Socket.IO для WebSocket коммуникации -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+</head>
+<body>
+    <!-- Заголовок страницы -->
+    <h1>Спор между двумя агентами AI</h1>
+
+    <!-- Индикатор статуса GPU -->
+    <div id="gpu-indicator">
+        <div id="lamp"></div>
+        <span id="gpu-message">Проверка GPU...</span>
+    </div>
+
+    <!-- Форма для ввода параметров диалога -->
+    <form id="dialog-form">
+        <!-- Поле для темы диалога -->
+        <div>
+            <label for="topic">Тема диалога:</label>
+            <textarea id="topic" name="topic">Спор о форме Земли</textarea>
+        </div>
+
+        <!-- Поле для имени роли 1 -->
+        <div>
+            <label for="role1_name">Имя роли 1 (начинает диалог):</label>
+            <input type="text" id="role1_name" name="role1_name" value="Ученый">
+        </div>
+
+        <!-- Поле для описания роли 1 -->
+        <div>
+            <label for="role1_description">Описание личности роли 1:</label>
+            <textarea id="role1_description" name="role1_description">Ты известный ученый физик и готов решать любые задачи. Приводи аргументы в пользу своей точки зрения. На все возражения приводи свои доказательства или примеры. Ты вспыльчив и эмоционален.</textarea>
+        </div>
+
+        <!-- Поле для имени роли 2 -->
+        <div>
+            <label for="role2_name">Имя роли 2:</label>
+            <input type="text" id="role2_name" name="role2_name" value="Студент">
+        </div>
+
+        <!-- Поле для описания роли 2 -->
+        <div>
+            <label for="role2_description">Описание личности роли 2:</label>
+            <textarea id="role2_description" name="role2_description">Ты веселый студент университета. И ты любишь спорить. Убеди оппонента, что твоя точка зрения верна. Приводи примеры и доказательства из математики физики и других наук. Шути если собеседник не соглашается.</textarea>
+        </div>
+
+        <!-- Поле для количества шагов диалога -->
+        <div>
+            <label for="num_steps">Количество шагов диалога:</label>
+            <input type="number" id="num_steps" name="num_steps" min="1" max="30" value="7">
+        </div>
+
+        <!-- Кнопки для запуска и остановки диалога -->
+        <div class="button-container">
+            <button type="submit">Запустить диалог</button>
+            <button type="button" id="stop-button" disabled>Стоп</button>
+        </div>
+    </form>
+
+    <!-- Сообщение об ошибке (скрыто по умолчанию) -->
+    <div id="error-message">❌ Ошибка: Сообщение ошибки ...</div>
+
+    <!-- Контейнер для отображения диалога -->
+    <div id="dialog-container" class="dialog-container"></div>
+
+    <!-- Прогресс-бар для отслеживания прогресса -->
+    <div class="progress">
+        <div id="progress-bar" class="progress-bar"></div>
+    </div>
+
+    <!-- Сообщение о завершении диалога (скрыто по умолчанию) -->
+    <div id="success-message">✅ Диалог завершен! Сгенерировано <span id="steps-count"></span> реплик.</div>
+
+    <!-- Сообщение об остановке диалога (скрыто по умолчанию) -->
+    <div id="stop-message">🛑 Диалог остановлен!</div>
+
+    <!-- Разделитель -->
+    <hr style="width: 100%; max-width: 600px; border-color: rgba(255,255,255,0.3);">
+
+    <!-- Текст инструкции -->
+    <p style="color: #fff; text-align: center; width: 100%; max-width: 600px;"><strong>Инструкция:</strong></p>
+    <!-- Нумерованный список инструкций -->
+    <ol>
+        <li>Заполните тему диалога и описания ролей</li>
+        <li>Укажите количество шагов (реплик)</li>
+        <li>Нажмите "Запустить диалог"</li>
+        <li>Смотрите результат в окне выше</li>
+    </ol>
+
+    <!-- JavaScript для обработки взаимодействий и WebSocket-соединений -->
+    <script>
+        // Инициализация подключения к Socket.IO
+        const socket = io();
+
+        // Получение элементов DOM
+        const form = document.getElementById('dialog-form');
+        const dialogContainer = document.getElementById('dialog-container');
+        const progressBar = document.getElementById('progress-bar');
+        const successMessage = document.getElementById('success-message');
+        const stepsCount = document.getElementById('steps-count');
+        const stopMessage = document.getElementById('stop-message');
+        const errorMessage = document.getElementById('error-message');
+        const stopButton = document.getElementById('stop-button');
+        const lamp = document.getElementById('lamp');
+        const gpuMessage = document.getElementById('gpu-message');
+
+        // Переменные для состояния
+        const numStepsInput = document.getElementById('num_steps');
+        let totalSteps = parseInt(numStepsInput.value);
+        let currentStep = null;
+        let currentSpeaker = null;
+        let currentTimer = null; // Таймер для счетчика секунд
+        let counter = 0; // Счетчик секунд
+
+        // Функция для проверки, находится ли пользователь внизу контейнера диалога
+        function isAtBottom() {
+            return dialogContainer.scrollTop + dialogContainer.clientHeight >= dialogContainer.scrollHeight - 10; // Маленький порог в 10px
+        }
+
+        // Обработчик отправки формы
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            dialogContainer.innerHTML = '';
+            progressBar.style.width = '0%';
+            successMessage.style.display = 'none';
+            stopMessage.style.display = 'none';
+            errorMessage.style.display = 'none';  // Скрываем предыдущие ошибки
+            currentStep = null;  // Сбрасываем перед запуском
+            currentSpeaker = null;
+            totalSteps = parseInt(numStepsInput.value);
+            clearInterval(currentTimer); // Останавливаем предыдущий таймер, если есть
+            currentTimer = null;
+            counter = 0;
+            const data = new FormData(form);
+            const jsonData = {
+                topic: data.get('topic'),
+                role1_name: data.get('role1_name'),
+                role1_description: data.get('role1_description'),
+                role2_name: data.get('role2_name'),
+                role2_description: data.get('role2_description'),
+                num_steps: data.get('num_steps')
+            };
+            socket.emit('start_dialog', jsonData);
+            stopButton.disabled = false;
+        });
+
+        // Обработчик клика по кнопке стоп
+        stopButton.addEventListener('click', function() {
+            socket.emit('stop_dialog');
+            stopButton.disabled = true;
+        });
+
+        // Обработчик события 'waiting' от сервера
+        socket.on('waiting', function(data) {
+            // Сохраняем текущий шаг и спикера
+            currentStep = data.step;
+            currentSpeaker = data.speaker;
+
+            clearInterval(currentTimer); // Останавливаем предыдущий таймер
+            counter = 0; // Сбрасываем счетчик
+
+            const waitingDiv = document.createElement('div');
+            waitingDiv.className = 'dialog-line-waiting';
+
+            // Текстовая часть
+            const textPart = document.createTextNode(`${data.step}. ${data.speaker}: `);
+            waitingDiv.appendChild(textPart);
+
+            // SVG спиннер
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.classList.add('spinner-svg');
+            svg.setAttribute('viewBox', '0 0 50 50');
+
+            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            circle.classList.add('path');
+            circle.setAttribute('cx', '25');
+            circle.setAttribute('cy', '25');
+            circle.setAttribute('r', '20');
+
+            const textNode = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            textNode.classList.add('counter');
+            textNode.setAttribute('x', '25');
+            textNode.setAttribute('y', '30');
+            textNode.setAttribute('text-anchor', 'middle');
+            textNode.setAttribute('font-size', '12');
+            textNode.textContent = '0';
+
+            svg.appendChild(circle);
+            svg.appendChild(textNode);
+            waitingDiv.appendChild(svg);
+
+            // Текст после спиннера
+            const generationText = document.createTextNode(' Генерация ответа...');
+            waitingDiv.appendChild(generationText);
+
+            dialogContainer.appendChild(waitingDiv);
+            if (isAtBottom()) {
+                dialogContainer.scrollTop = dialogContainer.scrollHeight;
+            }
+
+            // Запуск таймера для счетчика секунд
+            currentTimer = setInterval(() => {
+                counter++;
+                const lastSvg = dialogContainer.querySelector('.dialog-line-waiting:last-of-type .spinner-svg');
+                if (lastSvg) {
+                    const textElement = lastSvg.querySelector('text');
+                    if (textElement) {
+                        textElement.textContent = counter;
+                    }
+                }
+            }, 1000);
+        });
+
+        // Обработчик события 'new_line' от сервера
+        socket.on('new_line', function(data) {
+            clearInterval(currentTimer); // Останавливаем таймер
+            currentTimer = null;
+
+            const lines = dialogContainer.querySelectorAll('.dialog-line-waiting, .dialog-line');
+            if (lines.length > 0) {
+                // Создаем новый div для завершённой строки
+                const completedDiv = document.createElement('div');
+                completedDiv.className = 'dialog-line';
+
+                const textPart = document.createTextNode(`${data.step}. ${data.line}`);
+                completedDiv.appendChild(textPart);
+
+                // Заменяем последнюю строку на завершённую
+                dialogContainer.replaceChild(completedDiv, lines[lines.length - 1]);
+            }
+            const percentage = (data.step / totalSteps) * 100;
+            progressBar.style.width = `${percentage}%`;
+            // Изменение цвета прогресс-бара
+            const hue = (data.step / totalSteps) * 120;
+            progressBar.style.background = `linear-gradient(135deg, hsl(${hue}, 70%, 50%) 0%, hsl(${hue - 20 < 0 ? 0 : hue - 20}, 80%, 45%) 100%)`;
+            if (isAtBottom()) {
+                dialogContainer.scrollTop = dialogContainer.scrollHeight;
+            }
+        });
+
+        // Обработчик события 'dialog_completed' от сервера
+        socket.on('dialog_completed', function(data) {
+            clearInterval(currentTimer); // Останавливаем таймер, если не остановился
+            stepsCount.textContent = data.steps;
+            successMessage.style.display = 'block';
+            stopButton.disabled = true;
+        });
+
+        // Обработчик события 'dialog_stopped' от сервера
+        socket.on('dialog_stopped', function() {
+            clearInterval(currentTimer); // Останавливаем таймер
+            currentTimer = null;
+
+            // Заменяем последнюю строку ожидания на остановленную
+            const lastWaiting = dialogContainer.querySelector('.dialog-line-waiting:last-of-type');
+            if (lastWaiting && currentStep && currentSpeaker) {
+                const stoppedDiv = document.createElement('div');
+                stoppedDiv.className = 'dialog-line';
+
+                const textPart = document.createTextNode(`${currentStep}. ${currentSpeaker}: Генерация остановлена`);
+                stoppedDiv.appendChild(textPart);
+
+                dialogContainer.replaceChild(stoppedDiv, lastWaiting);
+            }
+
+            stopMessage.style.display = 'block';
+            progressBar.style.width = '0%';
+            stopButton.disabled = true;
+        });
+
+        // Обработчик события 'gpu_status' от сервера
+        socket.on('gpu_status', function(data) {
+            gpuMessage.textContent = data.message;
+            if (data.status === 'busy') {
+                lamp.style.backgroundColor = 'red';
+            } else if (data.status === 'free') {
+                lamp.style.backgroundColor = 'green';
+            } else {
+                lamp.style.backgroundColor = 'gray';
+            }
+        });
+
+        // Обработчик события 'dialog_error' от сервера
+        socket.on('dialog_error', function(data) {
+            errorMessage.innerHTML = '❌ ' + data.message;  // Обновляем текст ошибки
+            errorMessage.style.display = 'block';  // Показываем div ошибки
+            stopButton.disabled = true;  // Отключаем кнопку стоп, поскольку диалог не начался
+            clearInterval(currentTimer); // Останавливаем таймер, если был запущен
+        });
+    </script>
+
+</body>
+</html>
+
+
+
